@@ -133,7 +133,18 @@ export async function GET(request: Request) {
   const longitude = toNumber(searchParams.get("lon"), 126.978);
   const fuel = normalizeFuel(searchParams.get("fuel"));
   const radius = Math.min(Math.max(toNumber(searchParams.get("radius"), 3000), 500), 5000);
+  const debug = searchParams.get("debug") === "1";
   const certkey = readOpinetCertkey();
+  const diagnostics: {
+    keyConfigured: boolean;
+    opinetStatus?: number;
+    contentType?: string | null;
+    resultKeys?: string[];
+    oilCount?: number;
+    error?: string;
+  } = {
+    keyConfigured: Boolean(certkey)
+  };
 
   if (certkey) {
     try {
@@ -150,12 +161,16 @@ export async function GET(request: Request) {
       const response = await fetch(`https://www.opinet.co.kr/api/aroundAll.do?${params}`, {
         cache: "no-store"
       });
+      diagnostics.opinetStatus = response.status;
+      diagnostics.contentType = response.headers.get("content-type");
 
       if (!response.ok) {
         throw new Error(`Opinet responded ${response.status}`);
       }
 
       const data = (await response.json()) as { RESULT?: { OIL?: unknown } };
+      diagnostics.resultKeys = Object.keys(data.RESULT ?? {});
+      diagnostics.oilCount = toArray(data.RESULT?.OIL).length;
       const stations = toArray(data.RESULT?.OIL)
         .map((station, index) => mapOpinetStation(station, index, fuel))
         .filter((station) => station.price > 0)
@@ -172,7 +187,8 @@ export async function GET(request: Request) {
           updatedAt: new Date().toISOString(),
           radius,
           center: { latitude, longitude },
-          stations: enrichedStations
+          stations: enrichedStations,
+          ...(debug ? { diagnostics } : {})
         },
         {
           headers: {
@@ -181,6 +197,7 @@ export async function GET(request: Request) {
         }
       );
     } catch (error) {
+      diagnostics.error = error instanceof Error ? error.message : String(error);
       console.error("Opinet station lookup failed", error);
     }
   }
@@ -192,7 +209,8 @@ export async function GET(request: Request) {
       updatedAt: new Date().toISOString(),
       radius,
       center: { latitude, longitude },
-      stations: buildDemoStations(latitude, longitude, fuel)
+      stations: buildDemoStations(latitude, longitude, fuel),
+      ...(debug ? { diagnostics } : {})
     },
     {
       headers: {
