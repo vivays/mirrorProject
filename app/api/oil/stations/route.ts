@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { katecToWgs84, wgs84ToKatec } from "@/lib/katec";
 import { brandLabels, buildDemoStations, normalizeFuel, type Station } from "@/lib/oil-data";
+import { readOpinetCertkey } from "@/lib/opinet-env";
 
 export const runtime = "nodejs";
 
@@ -132,7 +133,7 @@ export async function GET(request: Request) {
   const longitude = toNumber(searchParams.get("lon"), 126.978);
   const fuel = normalizeFuel(searchParams.get("fuel"));
   const radius = Math.min(Math.max(toNumber(searchParams.get("radius"), 3000), 500), 5000);
-  const certkey = process.env.OPINET_CERTKEY ?? process.env.OPINET_API_KEY;
+  const certkey = readOpinetCertkey();
 
   if (certkey) {
     try {

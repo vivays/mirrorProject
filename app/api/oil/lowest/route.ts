@@ -6,6 +6,7 @@ import {
   type FuelCode,
   type LowestStation
 } from "@/lib/oil-data";
+import { readOpinetCertkey } from "@/lib/opinet-env";
 
 export const runtime = "nodejs";
 
@@ -55,7 +56,7 @@ export async function GET(request: Request) {
   const fuel = normalizeFuel(searchParams.get("fuel"));
   const area = searchParams.get("area")?.trim() ?? "";
   const count = Math.min(Math.max(toNumber(searchParams.get("cnt"), 10), 1), 20);
-  const certkey = process.env.OPINET_CERTKEY ?? process.env.OPINET_API_KEY;
+  const certkey = readOpinetCertkey();
 
   if (certkey) {
     try {

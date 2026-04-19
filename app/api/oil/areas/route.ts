@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { fallbackAreas, type AreaOption } from "@/lib/oil-data";
+import { readOpinetCertkey } from "@/lib/opinet-env";
 
 export const runtime = "nodejs";
 
@@ -34,7 +35,7 @@ function normalizeTopAreaName(value: string) {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const parentArea = searchParams.get("area")?.trim() ?? "";
-  const certkey = process.env.OPINET_CERTKEY ?? process.env.OPINET_API_KEY;
+  const certkey = readOpinetCertkey();
 
   if (certkey) {
     try {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { buildDemoAverages, fuelOptions, type DomesticAverage, type FuelCode } from "@/lib/oil-data";
+import { readOpinetCertkey } from "@/lib/opinet-env";
 
 export const runtime = "nodejs";
 
@@ -28,7 +29,7 @@ function toNumber(value: unknown, fallback = 0) {
 }
 
 export async function GET() {
-  const certkey = process.env.OPINET_CERTKEY ?? process.env.OPINET_API_KEY;
+  const certkey = readOpinetCertkey();
 
   if (certkey) {
     try {
